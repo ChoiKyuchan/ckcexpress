@@ -9,9 +9,10 @@ const bodyParser = require("body-parser");
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
-app.use(cors({ origin: "http://localhost:8080", credential: true })); // 본인 프로젝트 포트번호로 변경
+app.use(cors({ origin: "http://localhost:4004", credential: true })); // 본인 프로젝트 포트번호로 변경
 
 const api_url = `https://api.test.us20.dmc.cloud.sap/`;
+
 
 const getAPI = async (request) => {
   console.log('** getAPI api  = ' + request.url);
@@ -34,10 +35,13 @@ const getAPI = async (request) => {
     // }})
     response = await axios.get(callUrl, { headers: { Authorization : 'Bearer '+token }})
   } catch (error) {
-    console.log(error);
+    //console.log(error);
+    console.log('error get');
+    response = { error: 'Error occurred while fetching data' };
   }
   return response;
 };
+
 
 const postAPI = async (request) => {
   console.log('** postAPI api = ' + request.url);
@@ -53,10 +57,13 @@ const postAPI = async (request) => {
   try {
     response = await axios.post(callUrl, request.body, { headers: { Authorization : 'Bearer '+token }})
   } catch (error) {
-    console.log(error);
+    //console.log(error);
+    console.log('error post');
+    response = { error: 'Error occurred while posting data' };
   }
   return response;
 };
+
 
 app.get("/", (req, res) => {
   console.log('* get call');
@@ -64,9 +71,15 @@ app.get("/", (req, res) => {
   console.log('* req.api = ' + req.query.api);
   
   getAPI(req).then((response) => {
-    //console.log('* response.data = ' + JSON.stringify(response.data));
-    console.log('* getAPI reponse success');
-    res.json(response.data);
+    console.log('* getAPI reponse success = ');// + JSON.stringify(response.data));
+    if(response.data != undefined) {
+      res.status(200).json(response.data);
+    } else {
+      res.status(500).send('getAPI reponse undefined');
+    }
+  }).catch((error) => {
+    console.log(error);
+    console.log('* getAPI reponse error');
   });
 });
 
@@ -76,9 +89,15 @@ app.post("/", (req, res) => {
   console.log('* req.api = ' + JSON.stringify(req.body.api));
   
   postAPI(req).then((response) => {
-    //console.log('* response.data = ' + JSON.stringify(response.data));
-    console.log('* postAPI reponse success');
-    res.json(response.data);
+    console.log('* postAPI reponse success = ');// + JSON.stringify(response.data));
+    if(response.data != undefined) {
+      res.status(200).json(response.data);
+    } else {
+      res.status(500).send('postAPI reponse undefined');
+    }
+  }).catch((error) => {
+    console.log(error);
+    console.log('* postAPI reponse error');
   });
 });
 
@@ -89,14 +108,14 @@ app.listen(port, () => {
     console.log('** getToken success');
     token = response;
   });
-})
+});
 
 
 const getToken = async () => {
   // Client ID와 Client Secret
-  const clientId = '';
-  const clientSecret = '';
-  const tokenUrl = '';
+  const clientId = 'sb-da3d1273-c085-4f4e-9a19-c9c513161aac!b15990|dmc-services-quality!b257';
+  const clientSecret = '5940e4ed-b451-4e03-a57e-29b9f5ecf386$4VeTF9JKjC9fN0mA_QmVMgKC7p4fsdSe3mXyiJofVcM=';
+  const tokenUrl = 'https://cloud-platform-integration-partner-p300005-qhzagpq9.authentication.us20.hana.ondemand.com/oauth/token';
     try {
         const response = await axios.post(tokenUrl, null, {
             headers: {
@@ -112,7 +131,6 @@ const getToken = async () => {
         });
 
         const token = response.data.access_token;
-        //console.log('Bearer ' + token);
         return token;
     } catch (error) {
         console.error('Error fetching token:', error.response.data);
